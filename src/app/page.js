@@ -1,10 +1,11 @@
 'use client'
+// /app/page.js
 import { useState, useEffect } from "react";
 import GameCanvas from "./components/canvas";
 
 export default function Home() {
   const [gameState, setGameState] = useState({
-    grid: [], // 초기값을 빈 배열로 설정
+    grid: [],
     gems: [],
     collectedGems: 0,
   });
@@ -19,20 +20,18 @@ export default function Home() {
         Array(GRID_SIZE)
           .fill()
           .map(() => ({
-            depth: 1, // 1~3 사이의 랜덤 깊이
+            depth: Math.floor(Math.random() * 10) + 1, // 1~10 사이의 랜덤 깊이
             state: "intact",
           }))
       );
 
     // 보석 위치 설정 (겹치지 않도록)
     const initialGems = [];
-    const occupied = new Set(); // 겹침 방지를 위한 Set
+    const occupied = new Set();
 
     const addGem = (row, col, size) => {
       if (size === 4) {
-        // 2x2 보석이 그리드 범위를 벗어나지 않도록 확인
         if (row + 1 >= GRID_SIZE || col + 1 >= GRID_SIZE) return false;
-        // 겹치는지 확인
         const positions = [
           `${row},${col}`,
           `${row},${col + 1}`,
@@ -42,7 +41,6 @@ export default function Home() {
         if (positions.some((pos) => occupied.has(pos))) return false;
         positions.forEach((pos) => occupied.add(pos));
       } else {
-        // 1칸 보석
         const pos = `${row},${col}`;
         if (occupied.has(pos)) return false;
         occupied.add(pos);
@@ -51,12 +49,11 @@ export default function Home() {
       return true;
     };
 
-    // 보석 3개 추가 (랜덤 크기)
     let gemsAdded = 0;
     while (gemsAdded < 3) {
       const row = Math.floor(Math.random() * GRID_SIZE);
       const col = Math.floor(Math.random() * GRID_SIZE);
-      const size = Math.random() > 0.5 ? 4 : 1; // 50% 확률로 1칸 또는 4칸
+      const size = Math.random() > 0.5 ? 4 : 1;
       if (addGem(row, col, size)) {
         gemsAdded++;
       }
@@ -68,9 +65,10 @@ export default function Home() {
       collectedGems: 0,
     });
 
-    console.log("Initial Grid:", initialGrid);
-    console.log("Initial Gems:", initialGems);
+    // console.log("Initial Grid:", initialGrid);
+    // console.log("Initial Gems:", initialGems);
   }, []);
+
   // "치대" 버튼 기능
   const handleChisel = () => {
     const newGrid = [...gameState.grid.map((row) => [...row])];
@@ -89,30 +87,33 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center" style={{ textAlign: "center", padding: "20px" }}>
+    <div className=" text-center p-5 flex flex-col items-center justify-center">
       {/* 상단 UI */}
-      <div className="w-full text-black"
+      <div
         style={{
           backgroundColor: "#f4c430",
           padding: "10px",
           marginBottom: "10px",
           borderRadius: "10px",
         }}
+        className="w-full"
       >
         <h1>숨겨진 사원</h1>
-        <p></p>
-        <div className="flex justify-between text-black">
-          {/* <div>상자 1</div>
+        <p>1번 23시간</p>
+        <div style={{ display: "flex", justifyContent: "space-around" }}>
+          <div>상자 1</div>
           <div>상자 2</div>
           <div>상자 3</div>
           <div>상자 4</div>
           <button>열기</button>
-          <button>관문</button> */}
+          <button>관문</button>
         </div>
       </div>
 
-      {/* 캔버스 컴포넌트 */}
-      <GameCanvas gameState={gameState} setGameState={setGameState} />
+      {/* 캔버스 컴포넌트 (반응형 div 안에 배치) */}
+      <div className="w-full max-w-[800px] min-w-[300px] mx-auto overflow-x-auto flex justify-center">
+        <GameCanvas gameState={gameState} setGameState={setGameState} />
+      </div>
 
       {/* 치대 버튼 */}
       {/* <div style={{ marginTop: "10px" }}>
