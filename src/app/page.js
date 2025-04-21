@@ -20,7 +20,7 @@ export default function Home() {
         Array(GRID_SIZE)
           .fill()
           .map(() => ({
-            depth: Math.floor(Math.random() * 10) + 1, // 1~10 사이의 랜덤 깊이
+            depth: 10, // 1~10 사이의 랜덤 깊이
             state: "intact",
           }))
       );
@@ -89,7 +89,7 @@ export default function Home() {
   return (
     <div className=" text-center p-5 flex flex-col items-center justify-center">
       {/* 상단 UI */}
-      <div
+      {/* <div
         style={{
           backgroundColor: "#f4c430",
           padding: "10px",
@@ -108,11 +108,13 @@ export default function Home() {
           <button>열기</button>
           <button>관문</button>
         </div>
-      </div>
+      </div> */}
 
       {/* 캔버스 컴포넌트 (반응형 div 안에 배치) */}
-      <div className="w-full max-w-[800px] min-w-[300px] mx-auto overflow-x-auto flex justify-center">
-        <GameCanvas gameState={gameState} setGameState={setGameState} />
+      <div className="p-[10%] w-full aspect-1/1 bg-no-repeat bg-cover" style={{ backgroundImage: "url('/images/game_back_2.png')" }}>
+        <div className="w-full max-w-[800px] min-w-[200px]  mx-auto overflow-x-auto flex justify-center rounded-2xl" >
+          <GameCanvas gameState={gameState} setGameState={setGameState} />
+        </div>
       </div>
 
       {/* 치대 버튼 */}

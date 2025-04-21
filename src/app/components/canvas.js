@@ -7,6 +7,49 @@ export default function GameCanvas({ gameState, setGameState }) {
     const canvasRef = useRef(null);
     const GRID_SIZE = 5;
     const [tileSize, setTileSize] = useState(0); // TILE_SIZE 동적으로 계산
+    const [blockImages, setBlockImages] = useState({}); // depth 구간별 이미지 저장
+
+    // depth에 따른 이미지 경로 매핑
+    const getBlockImageSrc = (depth) => {
+        if (depth >= 7) {
+            return "/images/block.png"; // depth 10~7
+        } else if (depth >= 4) {
+            return "/images/block_2.png"; // depth 6~4
+        } else {
+            return "/images/block_3.png"; // depth 3~1
+        }
+    };
+
+    // 이미지 미리 로드
+    useEffect(() => {
+        const imageSources = [
+            "/images/block.png",
+            "/images/block_2.png",
+            "/images/block_3.png",
+        ];
+
+        const loadedImages = {};
+        let loadedCount = 0;
+
+        imageSources.forEach((src) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                loadedImages[src] = img;
+                loadedCount++;
+                if (loadedCount === imageSources.length) {
+                    setBlockImages(loadedImages);
+                }
+            };
+            img.onerror = () => {
+                console.error(`Failed to load image: ${src}`);
+                loadedCount++;
+                if (loadedCount === imageSources.length) {
+                    setBlockImages(loadedImages);
+                }
+            };
+        });
+    }, []);
 
     // 보석이 차지하는 모든 칸이 깨졌는지 확인 (수집 조건)
     const isGemFullyRevealed = (gem, grid) => {
@@ -100,30 +143,34 @@ export default function GameCanvas({ gameState, setGameState }) {
 
                 if (grid[row]?.[col]?.state === "intact") {
                     const depth = grid[row][col].depth;
+                    const imageSrc = getBlockImageSrc(depth);
+                    const blockImage = blockImages[imageSrc];
                     // depth에 따라 색상 설정
-                    if (depth >= 9) {
-                        ctx.fillStyle = "#7f1d1d"; // 10~9
-                    } else if (depth >= 7) {
-                        ctx.fillStyle = "#991b1b"; // 8~7
-                    } else if (depth >= 5) {
-                        ctx.fillStyle = "#b91c1c"; // 6~5
-                    } else if (depth >= 3) {
-                        ctx.fillStyle = "#dc2626"; // 4~3: red-600
+                    // 이미지가 로드되었으면 이미지로 그리기, 아니면 대체 색상 사용
+                    if (blockImage) {
+                        ctx.drawImage(blockImage, x, y, tileSize, tileSize);
                     } else {
-                        ctx.fillStyle = "#ef4444"; // 2~1: red-500
+                        // 이미지 로드 전 또는 실패 시 대체 색상
+                        if (depth >= 7) {
+                            ctx.fillStyle = "#7f1d1d"; // 10~7: red-900
+                        } else if (depth >= 4) {
+                            ctx.fillStyle = "#991b1b"; // 6~4: red-800
+                        } else {
+                            ctx.fillStyle = "#b91c1c"; // 3~1: red-700
+                        }
+                        ctx.fillRect(x, y, tileSize, tileSize);
                     }
-                    ctx.fillRect(x, y, tileSize, tileSize);
 
                     // 검정색 테두리 추가
-                    ctx.strokeStyle = "#60330B";
-                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "";
+                    ctx.lineWidth = 0;
                     ctx.strokeRect(x, y, tileSize, tileSize);
 
                     // 깊이 숫자 표시 (디버깅용)
-                    ctx.fillStyle = "white";
-                    const fontSize = Math.max(12, tileSize / 5); // 최소 12px, tileSize에 비례
-                    ctx.font = `${fontSize}px Arial`;
-                    ctx.fillText(depth, x + tileSize / 2 - (depth >= 10 ? 8 : 5), y + tileSize / 2 + fontSize / 3)
+                    // ctx.fillStyle = "white";
+                    // const fontSize = Math.max(12, tileSize / 5); // 최소 12px, tileSize에 비례
+                    // ctx.font = `${fontSize}px Arial`;
+                    // ctx.fillText(depth, x + tileSize / 2 - (depth >= 10 ? 8 : 5), y + tileSize / 2 + fontSize / 3)
                 }
             }
         }
@@ -139,8 +186,8 @@ export default function GameCanvas({ gameState, setGameState }) {
             const displayWidth = canvas.clientWidth;
             const displayHeight = canvas.clientHeight;
 
-            // 최소 크기 설정 (최소 너비 300px)
-            const minCanvasSize = 300;
+            // 최소 크기 설정 (최소 너비 200px)
+            const minCanvasSize = 200;
             const canvasSize = Math.max(minCanvasSize, Math.min(displayWidth, 800));
 
             // 캔버스의 내부 픽셀 크기 동기화
@@ -163,7 +210,7 @@ export default function GameCanvas({ gameState, setGameState }) {
         observer.observe(canvas);
 
         return () => observer.disconnect();
-    }, [gameState]);
+    }, [gameState, blockImages]);
 
     // 클릭 및 터치 이벤트 처리
     useEffect(() => {
@@ -223,7 +270,7 @@ export default function GameCanvas({ gameState, setGameState }) {
         // 터치 이벤트 핸들러
         const handleTouch = (event) => {
             if (event.touches.length > 1) return;
-            
+
             event.preventDefault(); // 기본 터치 동작(스크롤 등) 방지
             const touch = event.touches[0];
             handleInteraction(touch.clientX, touch.clientY);
@@ -243,7 +290,7 @@ export default function GameCanvas({ gameState, setGameState }) {
     return (
         <canvas
             ref={canvasRef}
-            className="w-full aspect-square border-2 border-black bg-gray-200 rounded-lg shadow-md"
+            className="w-full aspect-square rounded-lg shadow-md"
             style={{ objectFit: "contain" }}
         />
     );
