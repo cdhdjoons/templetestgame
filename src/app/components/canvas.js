@@ -8,6 +8,7 @@ export default function GameCanvas({ gameState, setGameState }) {
     const GRID_SIZE = 5;
     const [tileSize, setTileSize] = useState(0); // TILE_SIZE 동적으로 계산
     const [blockImages, setBlockImages] = useState({}); // depth 구간별 이미지 저장
+    const [gemImages, setGemImages] = useState({}); // 보석 이미지 저장
 
     // depth에 따른 이미지 경로 매핑
     const getBlockImageSrc = (depth) => {
@@ -20,13 +21,24 @@ export default function GameCanvas({ gameState, setGameState }) {
         }
     };
 
+    // 보석 이미지 경로 (size에 따라 다름)
+    const getGemImageSrc = (size) => {
+        return size === 1 ? "/images/gem_small.png" : "/images/gem_large.png";
+    };
+
     // 이미지 미리 로드
     useEffect(() => {
-        const imageSources = [
-            "/images/block.png",
-            "/images/block_2.png",
-            "/images/block_3.png",
-        ];
+        const imageSources = [];
+        // 5x5 그리드에 대해 모든 블록 위치의 이미지 경로 생성
+        for (let row = 0; row < GRID_SIZE; row++) {
+            for (let col = 0; col < GRID_SIZE; col++) {
+                const src = getBlockImageSrc(row, col);
+                imageSources.push(src);
+            }
+        }
+        // 보석 이미지 추가
+        imageSources.push("/images/gem_small.png");
+        imageSources.push("/images/gem_large.png");
 
         const loadedImages = {};
         let loadedCount = 0;
@@ -39,6 +51,10 @@ export default function GameCanvas({ gameState, setGameState }) {
                 loadedCount++;
                 if (loadedCount === imageSources.length) {
                     setBlockImages(loadedImages);
+                    setGemImages({
+                        "/images/gem_small.png": loadedImages["/images/gem_small.png"],
+                        "/images/gem_large.png": loadedImages["/images/gem_large.png"],
+                    });
                 }
             };
             img.onerror = () => {
@@ -46,6 +62,10 @@ export default function GameCanvas({ gameState, setGameState }) {
                 loadedCount++;
                 if (loadedCount === imageSources.length) {
                     setBlockImages(loadedImages);
+                    setGemImages({
+                        "/images/gem_small.png": null,
+                        "/images/gem_large.png": null,
+                    });
                 }
             };
         });
@@ -96,12 +116,12 @@ export default function GameCanvas({ gameState, setGameState }) {
                 const y = row * tileSize;
 
                 if (grid[row]?.[col]?.state === "broken") {
-                    ctx.fillStyle = "#4b5563"; // Tailwind의 gray-600
+                    ctx.fillStyle = ""; // Tailwind의 gray-600
                     ctx.fillRect(x, y, tileSize, tileSize);
 
                     // 검정색 테두리 추가
                     ctx.strokeStyle = "#000000";
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 1;
                     ctx.strokeRect(x, y, tileSize, tileSize);
                 }
             }
@@ -112,26 +132,21 @@ export default function GameCanvas({ gameState, setGameState }) {
             const { row, col, size, collected } = gem;
             if (collected) return;
 
-            if (size === 1) {
-                const x = col * tileSize;
-                const y = row * tileSize;
-                ctx.fillStyle = "#a855f7"; // Tailwind의 purple-500
-                ctx.beginPath();
-                ctx.moveTo(x + tileSize / 2, y + 10);
-                ctx.lineTo(x + tileSize - 10, y + tileSize - 10);
-                ctx.lineTo(x + 10, y + tileSize - 10);
-                ctx.closePath();
-                ctx.fill();
+            const x = col * tileSize;
+            const y = row * tileSize;
+            const gemWidth = size === 1 ? tileSize : 2 * tileSize;
+            const gemHeight = size === 1 ? tileSize : 2 * tileSize;
+
+            const imageSrc = getGemImageSrc(size);
+            const gemImage = gemImages[imageSrc];
+
+            // 이미지가 로드되었으면 이미지로 그리기, 아니면 대체 색상 사용
+            if (gemImage) {
+                ctx.drawImage(gemImage, x, y, gemWidth, gemHeight);
             } else {
-                const x = col * tileSize;
-                const y = row * tileSize;
-                ctx.fillStyle = "#a855f7";
-                ctx.beginPath();
-                ctx.moveTo(x + tileSize, y + 20);
-                ctx.lineTo(x + 2 * tileSize - 20, y + 2 * tileSize - 20);
-                ctx.lineTo(x + 20, y + 2 * tileSize - 20);
-                ctx.closePath();
-                ctx.fill();
+                // 대체 색상 (기존 보라색)
+                ctx.fillStyle = "#a855f7"; // Tailwind의 purple-500
+                ctx.fillRect(x, y, gemWidth, gemHeight);
             }
         });
 
@@ -210,7 +225,7 @@ export default function GameCanvas({ gameState, setGameState }) {
         observer.observe(canvas);
 
         return () => observer.disconnect();
-    }, [gameState, blockImages]);
+    }, [gameState, blockImages, gemImages]);
 
     // 클릭 및 터치 이벤트 처리
     useEffect(() => {

@@ -20,7 +20,7 @@ export default function Home() {
         Array(GRID_SIZE)
           .fill()
           .map(() => ({
-            depth: 10, // 1~10 사이의 랜덤 깊이
+            depth: 1, // 1~10 사이의 랜덤 깊이
             state: "intact",
           }))
       );
@@ -111,8 +111,8 @@ export default function Home() {
       </div> */}
 
       {/* 캔버스 컴포넌트 (반응형 div 안에 배치) */}
-      <div className="p-[10%] w-full aspect-1/1 bg-no-repeat bg-cover" style={{ backgroundImage: "url('/images/game_back_2.png')" }}>
-        <div className="w-full max-w-[800px] min-w-[200px]  mx-auto overflow-x-auto flex justify-center rounded-2xl" >
+      <div className="p-[12%] sm:p-[5%] max-w-[800px] w-full aspect-1/1 bg-no-repeat bg-cover" style={{ backgroundImage: "url('/images/game_back_2.png')" }}>
+        <div className="w-full max-w-[800px] min-w-[200px] flex justify-center rounded-2xl" >
           <GameCanvas gameState={gameState} setGameState={setGameState} />
         </div>
       </div>
